@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Evento",
   description: "platform for event management",
   icons: {
-    icon: "/assets/images/logo.png",
+    icon: "./assets/images/logo.svg",
   },
 };
 
