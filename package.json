@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "node -e \"console.log(require('next/package').version)\""
+
   },
   "dependencies": {
     "@clerk/nextjs": "^5.1.6",
