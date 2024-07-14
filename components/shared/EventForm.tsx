@@ -4,7 +4,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/../../components/ui/button";
 import {
   Form,
   FormControl,
@@ -13,52 +13,61 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { EventFormSchema } from "@/lib/validator";
-import { eventDefaultValues } from "@/constants";
-import Dropdown from "@/components/shared/Dropdown";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/../../components/ui/form";
+import { Input } from "@/../../components/ui/input";
+import { eventFormSchema } from "@/../../lib/validator";
+import { eventDefaultValues } from "@/../../constants";
+import Dropdown from "@/../../components/shared/Dropdown";
+import { Textarea } from "@/../../components/ui/textarea";
 import { FileUploader } from "./FileUploader";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useUploadThing } from "@/lib/uploadthing";
+import { Checkbox } from "@/../../components/ui/checkbox";
+import { useUploadThing } from "@/../../lib/uploadthing";
 import { useRouter } from "next/navigation";
-import { createEvent } from "@/lib/actions/event.actions";
-
+import { createEvent, updateEvent } from "@/../../lib/actions/event.actions";
+import { IEvent } from "@/../../lib/database/models/event.model";
 
 type EventFormProps = {
-  userId: String;
-  type: "Create" | "Update";
+  userId: string
+  type: "Create" | "Update"
+  event?: IEvent
+  eventId: string
 };
 
 type ValuePiece = Date | null;
 
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
-const EventForm = ({ userId, type }: { userId: string, type: string }) => {
+const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
   const [files, setFiles] = useState<File[]>([]);
-  const initialValues = eventDefaultValues;
+  const initialValues = event && type === 'Update' 
+    ? {
+      ...event,
+      startDateTime: new Date(event.startDateTime),
+      endDateTime: new Date(event.endDateTime),
+      imageUrl: event.imageUrl as string
+    } 
+    : eventDefaultValues;
   const router = useRouter();
 
   const { startUpload } = useUploadThing("imageUploader");
 
-  const form = useForm<z.infer<typeof EventFormSchema>>({
-    resolver: zodResolver(EventFormSchema),
+  const form = useForm<z.infer<typeof eventFormSchema>>({
+    resolver: zodResolver(eventFormSchema),
     defaultValues: initialValues,
   });
 
-  async function onSubmit(values: z.infer<typeof EventFormSchema>) {
-    const eventData = values;
+  async function onSubmit(values: z.infer<typeof eventFormSchema>) {
+    // const eventData = values;
 
     let uploadedImageUrl = values.imageUrl;
 
     if (files.length > 0) {
-      const uploadedImages = await startUpload(files);
+      const uploadedImages = await startUpload(files)
 
       if (!uploadedImages) {
-        return;
+        return
       }
       uploadedImageUrl = uploadedImages[0].url;
     }
@@ -70,11 +79,33 @@ const EventForm = ({ userId, type }: { userId: string, type: string }) => {
           userId,
           path: '/profile'
         })
-        
-        console.log(newEvent);
+
         if(newEvent) {
           form.reset();
           router.push(`/event/${newEvent._id}`)
+        }
+
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    if(type === 'Update') {
+
+      if(!eventId){
+        router.back()
+        return
+      }
+
+      try {
+        const updatedEvent = await updateEvent({
+          userId,
+          event: { ...values, imageUrl: uploadedImageUrl, _id:eventId },
+          path: `events/${eventId}`
+        })
+        
+        if(updatedEvent) {
+          form.reset();
+          router.push(`/event/${updatedEvent._id}`)
         }
 
       } catch (error) {
