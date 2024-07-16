@@ -88,6 +88,14 @@ export function removeKeysFromQuery({ params, keysToRemove }: RemoveUrlQueryPara
 }
 
 export const handleError = (error: unknown) => {
-  console.error(error)
-  throw new Error(typeof error === 'string' ? error : JSON.stringify(error))
+  console.error("Original error:", error);
+  let errorMessage: string;
+  try {
+    errorMessage = typeof error === 'string' ? error : JSON.stringify(error);
+  } catch (stringifyError) {
+    console.error("Error during serialization:", stringifyError);
+    errorMessage = "An error occurred, but it could not be serialized for logging.";
+  }
+  console.error("Error message being thrown:", errorMessage);
+  // throw(errorMessage)
 }
